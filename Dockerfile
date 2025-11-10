@@ -44,14 +44,17 @@ RUN pip install mmsegmentation==0.14.1
 RUN pip install timm
 RUN pip install lyft_dataset_sdk numba==0.48.0 plyfile tensorboard "trimesh>=2.35.39,<2.35.40" "networkx>=2.8" "numpy>=1.21" scikit-image nuscenes-devkit
 
-# Clone MapTR repository
-RUN git clone https://github.com/hustvl/MapTR.git /MapTR
+# Clone MapTR repository from your fork (maptrv2 branch)
+RUN git clone -b maptrv2 https://github.com/curious-jp/MapTR.git /MapTR
 
 # Install mmdet3d and GKT
 WORKDIR /MapTR/mmdetection3d
 RUN python setup.py develop --no-deps
 
+# Build geometric_kernel_attn - patch setup.py to skip CUDA runtime check
 WORKDIR /MapTR/projects/mmdet3d_plugin/maptr/modules/ops/geometric_kernel_attn
+RUN sed -i "s/raise NotImplementedError('Cuda is not availabel')/pass  # Skip CUDA check during Docker build/" setup.py
+ENV FORCE_CUDA=1
 RUN python setup.py build install
 
 # Install other requirements
